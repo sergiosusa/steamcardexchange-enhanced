@@ -4,6 +4,7 @@ This script enhanced the famous steam trading cards site **Steam Card Exchange**
 
 * Game card inventory page: 
   * Mark/Unmark cards that you need to easily found it.
+  * Export, import and clear buttons to handle users script configuration.  
 
 ### Supported sites
 
@@ -31,7 +32,7 @@ No extra configuration required.
 
 ## 📷Screenshots📷
 
-![Mark/Unmark card that you need to easily found it.](https://i.ibb.co/52XhZ3q/steamcardexchange-enhanced.png)
+![Mark/Unmark card that you need to easily found it.](https://i.ibb.co/zNqgNt4/steamcardexchange-enhanced.png)
 
 ### ☕Buy me a coffee☕
 

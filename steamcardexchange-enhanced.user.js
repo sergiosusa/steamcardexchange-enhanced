@@ -5,7 +5,7 @@
 // @description  This script enhanced the famous steam trading cards site Steam Card Exchange.
 // @author       Sergio Susa (https://sergiosusa.com)
 // @match        https://www.steamcardexchange.net/index.php?inventorygame-appid-*
-// @grant        none
+// @grant        GM_setClipboard
 // ==/UserScript==
 
 (function () {
@@ -55,7 +55,54 @@ function SteamCardExchangeEnhanced() {
 
         this.addClickListenerToInventoryGamePageGameCardButton();
 
+        this.renderInventoryGamePageActionBar();
+
+        this.addClickListenerToActionBar();
+
     };
+
+    this.addClickListenerToActionBar = () => {
+
+        document.querySelector('#sceExport').addEventListener('click', (function (self) {
+            GM_setClipboard(JSON.stringify(self.loadInventoryData()));
+            alert('Your exportation have been copied to your clipboard.');
+            return false;
+        }).bind(null, this));
+
+        document.querySelector('#sceImport').addEventListener('click', (function (self) {
+            let inventoryData = prompt('Paste your exportation here: ', '{}') || '{}';
+            try {
+                self.saveInventoryData(JSON.parse(inventoryData));
+                alert('Importation complete.');
+            } catch (e) {
+                alert('Importation text is not valid.');
+            }
+            return false;
+        }).bind(null, this));
+
+        document.querySelector('#sceClear').addEventListener('click', (function (self) {
+
+            if (confirm('Are you sure you want to clear your configuration?')) {
+                self.saveInventoryData({});
+                alert('Your configuration have been cleared.');
+            }
+
+            return false;
+        }).bind(null, this));
+    };
+
+    this.renderInventoryGamePageActionBar = () => {
+        document.querySelector('#content-advert').outerHTML = this.inventoryGamePageActionBarTemplate() + document.querySelector('#content-advert').outerHTML;
+    };
+
+    this.inventoryGamePageActionBarTemplate = () => {
+        return '<div class="content-box-button-bar" style="width: 1000px;height: 40px;line-height: 40px;margin: 2px auto 0px auto;background-color: #18191B;background-color: rgba(0, 0, 0, .3);position: relative;text-align: center;">\n' +
+            '  <span style="padding-top: 2px;font-weight: bold">SCE Enhanced: </span>' +
+            '  <a id="sceExport" style="float: inherit;" href="#sceExport" class="button-blue">EXPORT</a>\n' +
+            '  <a id="sceImport" style="float: inherit;" href="#sceImport" class="button-blue">IMPORT</a>\n' +
+            '  <a id="sceClear" style="float: inherit;" href="#sceClear" class="button-blue">CLEAR</a>\n' +
+            '</div>';
+    }
 
     this.loadInventoryData = () => {
         return JSON.parse(localStorage.getItem('sce-enhanced-inventory') || JSON.stringify({}));
