@@ -1,10 +1,11 @@
 // ==UserScript==
 // @name         Steam Card Exchange Enhanced
 // @namespace    https://sergiosusa.com/
-// @version      0.1
+// @version      0.2
 // @description  This script enhanced the famous steam trading cards site Steam Card Exchange.
 // @author       Sergio Susa (https://sergiosusa.com)
 // @match        https://www.steamcardexchange.net/index.php?inventorygame-appid-*
+// @match        https://www.steamcardexchange.net/index.php?inventory
 // @grant        GM_setClipboard
 // ==/UserScript==
 
@@ -28,9 +29,54 @@ function SteamCardExchangeEnhanced() {
 
     this.render = () => {
         this.renderInventoryGamePage();
+        this.renderInventoryPage();
+    };
+
+    this.renderInventoryPage = () => {
+
+        if (!this.isInventoryPage()) {
+            return;
+        }
+
+        let inventoryData = this.loadInventoryData();
+        let contentBox = document.querySelector("#inventory-content > div.content-box-normal");
+        let responseTable = this.inventoryPageTemplate(inventoryData);
+
+        contentBox.outerHTML = contentBox.outerHTML + this.inventoryGamePageActionBarTemplate() +
+            responseTable;
+
+        this.addClickListenerToActionBar();
+
+    };
+
+    this.inventoryPageTemplate = (inventoryData) => {
+
+        let template = '<div class="content-box">' +
+            '<div class="content-box-topbar"><span class="left">MARKED GAMES</span></div>' +
+            '<div class="dataTables_wrapper no-footer">' +
+            '<table id="markedGamesList" class="price-list-table nth dataTable no-footer" >' +
+            '<thead><tr><th class="name" style="width: 100%;" >' + (Object.keys(inventoryData).length === 0 && inventoryData.constructor === Object?'Empty':'Name') + '</th></thead>' +
+            '<tbody>';
+
+        let times = 0;
+        for (let key in inventoryData) {
+
+            template += '<tr class="' + (times % 2 === 0 ? 'even' : 'odd') + '">' +
+                '<td class="name"><a href="index.php?inventorygame-appid-' + key + '">' + inventoryData[key].name + '</a></td>' +
+                '</tr>';
+            times++;
+        }
+
+        template += '</tbody></table></div></div>';
+
+        return template;
     };
 
     this.renderInventoryGamePage = () => {
+
+        if (!this.isInventoryGamePage()) {
+            return;
+        }
 
         let inventoryData = this.loadInventoryData();
 
@@ -56,9 +102,6 @@ function SteamCardExchangeEnhanced() {
         this.addClickListenerToInventoryGamePageGameCardButton();
 
         this.renderInventoryGamePageActionBar();
-
-        this.addClickListenerToActionBar();
-
     };
 
     this.addClickListenerToActionBar = () => {
@@ -70,10 +113,16 @@ function SteamCardExchangeEnhanced() {
         }).bind(null, this));
 
         document.querySelector('#sceImport').addEventListener('click', (function (self) {
-            let inventoryData = prompt('Paste your exportation here: ', '{}') || '{}';
+            let inventoryData = prompt('Paste your exportation here: ') ;
+
+            if (inventoryData === null) {
+                return;
+            }
+
             try {
                 self.saveInventoryData(JSON.parse(inventoryData));
                 alert('Importation complete.');
+                location.reload();
             } catch (e) {
                 alert('Importation text is not valid.');
             }
@@ -85,6 +134,7 @@ function SteamCardExchangeEnhanced() {
             if (confirm('Are you sure you want to clear your configuration?')) {
                 self.saveInventoryData({});
                 alert('Your configuration have been cleared.');
+                location.reload();
             }
 
             return false;
@@ -93,6 +143,7 @@ function SteamCardExchangeEnhanced() {
 
     this.renderInventoryGamePageActionBar = () => {
         document.querySelector('#content-advert').outerHTML = this.inventoryGamePageActionBarTemplate() + document.querySelector('#content-advert').outerHTML;
+        this.addClickListenerToActionBar();
     };
 
     this.inventoryGamePageActionBarTemplate = () => {
@@ -153,20 +204,52 @@ function SteamCardExchangeEnhanced() {
 
                 let inventoryData = self.loadInventoryData();
                 let appId = self.appId();
+                let appName = self.appName();
 
                 if (inventoryData[appId] === undefined) {
                     inventoryData[appId] = {};
                 }
 
+                inventoryData[appId]['name'] = appName;
                 inventoryData[appId][event.target.getAttribute('sce-enhanced-index')] = selected;
+
+                if (!self.isSomethingMarked(inventoryData[appId])) {
+                    delete inventoryData[appId]
+                }
+
                 self.saveInventoryData(inventoryData);
 
             }).bind(null, self));
         });
     };
 
+    this.isSomethingMarked = (game) => {
+        for (let key in game) {
+            if (key !== 'name') {
+                if (game[key] !== 0) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    };
+
     this.appId = () => {
         let matches = window.location.href.match(/\.*\?inventorygame-appid-(\d*)/i);
         return matches[1];
     }
+
+    this.appName = () => {
+        return document.querySelector('.game-title').innerText.trim();
+    }
+
+    this.isInventoryPage = () => {
+        return window.location.href.includes('?inventory') && !this.isInventoryGamePage();
+    };
+
+    this.isInventoryGamePage = () => {
+        return window.location.href.includes('?inventorygame-appid-');
+    };
 }
+
+
