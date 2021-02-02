@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Steam Card Exchange Enhanced
 // @namespace    https://sergiosusa.com/
-// @version      0.2
+// @version      0.3
 // @description  This script enhanced the famous steam trading cards site Steam Card Exchange.
 // @author       Sergio Susa (https://sergiosusa.com)
 // @match        https://www.steamcardexchange.net/index.php?inventorygame-appid-*
@@ -46,7 +46,23 @@ function SteamCardExchangeEnhanced() {
             responseTable;
 
         this.addClickListenerToActionBar();
+        this.addClickListenerToActionButtons();
 
+    };
+
+    this.addClickListenerToActionButtons = () => {
+        document.querySelector('#sceClearGame').addEventListener('click', (function (self, event) {
+
+            if (confirm('Are you sure you want to clear this games?')) {
+
+                let inventoryData = self.loadInventoryData();
+                let appId = event.target.getAttribute('sce-enhanced-index');
+                delete inventoryData[appId];
+                self.saveInventoryData(inventoryData);
+                location.reload();
+            }
+            return false;
+        }).bind(null, this));
     };
 
     this.inventoryPageTemplate = (inventoryData) => {
@@ -54,15 +70,21 @@ function SteamCardExchangeEnhanced() {
         let template = '<div class="content-box">' +
             '<div class="content-box-topbar"><span class="left">MARKED GAMES</span></div>' +
             '<div class="dataTables_wrapper no-footer">' +
-            '<table id="markedGamesList" class="price-list-table nth dataTable no-footer" >' +
-            '<thead><tr><th class="name" style="width: 100%;" >' + (Object.keys(inventoryData).length === 0 && inventoryData.constructor === Object?'Empty':'Name') + '</th></thead>' +
-            '<tbody>';
+            '<table id="markedGamesList" class="price-list-table nth dataTable no-footer" ><thead><tr>';
+
+        if (Object.keys(inventoryData).length === 0 && inventoryData.constructor === Object) {
+            template += '<th class="name" style="width: 100%;padding: 0px;" >Empty</th>';
+        } else {
+            template += '<th class="name" style="width: 80%;padding: 0px;" >Name</th><th style="width: 20%;padding: 0px;">Actions</th>';
+        }
+
+        template += '</tr></thead><tbody>';
 
         let times = 0;
         for (let key in inventoryData) {
 
             template += '<tr class="' + (times % 2 === 0 ? 'even' : 'odd') + '">' +
-                '<td class="name"><a href="index.php?inventorygame-appid-' + key + '">' + inventoryData[key].name + '</a></td>' +
+                '<td class="name"><a href="index.php?inventorygame-appid-' + key + '">' + inventoryData[key].name + '</a></td><td><a id="sceClearGame" sce-enhanced-index="' + key + '" style="float: inherit;" href="#sceExport" class="button-blue">REMOVE</a></td>' +
                 '</tr>';
             times++;
         }
@@ -113,7 +135,7 @@ function SteamCardExchangeEnhanced() {
         }).bind(null, this));
 
         document.querySelector('#sceImport').addEventListener('click', (function (self) {
-            let inventoryData = prompt('Paste your exportation here: ') ;
+            let inventoryData = prompt('Paste your exportation here: ');
 
             if (inventoryData === null) {
                 return;
@@ -149,9 +171,9 @@ function SteamCardExchangeEnhanced() {
     this.inventoryGamePageActionBarTemplate = () => {
         return '<div class="content-box-button-bar" style="width: 1000px;height: 40px;line-height: 40px;margin: 2px auto 0px auto;background-color: #18191B;background-color: rgba(0, 0, 0, .3);position: relative;text-align: center;">\n' +
             '  <span style="padding-top: 2px;font-weight: bold">SCE Enhanced: </span>' +
-            '  <a id="sceExport" style="float: inherit;" href="#sceExport" class="button-blue">EXPORT</a>\n' +
-            '  <a id="sceImport" style="float: inherit;" href="#sceImport" class="button-blue">IMPORT</a>\n' +
-            '  <a id="sceClear" style="float: inherit;" href="#sceClear" class="button-blue">CLEAR</a>\n' +
+            '  <a id="sceExport" style="float: inherit;" href="#sceExport" class="button-blue">EXPORT</a>' +
+            '  <a id="sceImport" style="float: inherit;" href="#sceImport" class="button-blue">IMPORT</a>' +
+            '  <a id="sceClear" style="float: inherit;" href="#sceClear" class="button-blue">CLEAR ALL</a>' +
             '</div>';
     }
 
