@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Steam Card Exchange Enhanced
 // @namespace    https://sergiosusa.com/
-// @version      0.4
+// @version      0.6
 // @description  This script enhanced the famous steam trading cards site Steam Card Exchange.
 // @author       Sergio Susa (https://sergiosusa.com)
 // @match        https://www.steamcardexchange.net/index.php?inventorygame-appid-*
@@ -20,6 +20,7 @@
 })();
 
 function SteamCardExchangeEnhanced() {
+    Renderer.call(this);
 
     this.dataManager = new DataManager();
     this.toolBar = new ToolBar(this.dataManager);
@@ -28,21 +29,32 @@ function SteamCardExchangeEnhanced() {
         new MarkCardList(this.toolBar, this.dataManager),
         new ListMarkedGames(this.toolBar, this.dataManager)
     ];
+}
+
+SteamCardExchangeEnhanced.prototype = Object.create(Renderer.prototype);
+
+function Renderer() {
+    this.rendererList = [];
+    this.globalRenderList = [];
 
     this.render = () => {
         let renderer = this.findRenderer();
-
-        if (renderer !== undefined) {
+        if (renderer){
             renderer.render();
         }
-    };
+        this.globalRender();
+    }
 
     this.findRenderer = () => {
         return this.rendererList.find(renderer => renderer.canHandleCurrentPage());
     };
+
+    this.globalRender = function () {
+        return this.globalRenderList.map(renderer => renderer.render());
+    }
 }
 
-function Renderer() {
+function Renderable() {
     this.handlePage = "";
 
     this.canHandleCurrentPage = () => {
@@ -73,11 +85,15 @@ function ToolBar(dataManager) {
     this.dataManager = dataManager;
 
     this.template = () => {
-        return '<div class="content-box-button-bar" style="width: 1000px;height: 40px;line-height: 40px;margin: 2px auto 0px auto;background-color: #18191B;background-color: rgba(0, 0, 0, .3);position: relative;text-align: center;">\n' +
-            '  <span style="padding-top: 2px;font-weight: bold">SCE Enhanced: </span>' +
-            '  <a id="sceExport" style="float: inherit;" href="#sceExport" class="button-blue">EXPORT</a>' +
-            '  <a id="sceImport" style="float: inherit;" href="#sceImport" class="button-blue">IMPORT</a>' +
-            '  <a id="sceClear" style="float: inherit;" href="#sceClear" class="button-blue">CLEAR ALL</a>' +
+        return '<div style="display:flex;margin-top: 10px;justify-content: space-between;" class="flex items-center p-2 mx-auto mt-0.5 leading-none bg-black">' +
+            '<div class="w-1.5 h-1.5 bg-blue ml-1 mr-2 shrink-0"></div>' +
+            '  <span style="margin-right: 100px;flex-grow: 2;" class="tracking-wider font-league-gothic">SCE ENHANCED </span>' +
+            '<div>'+
+            '  <a class="btn-primary lg:w-min" id="sceExport" style="float: inherit;" href="#sceExport" >EXPORT</a>' +
+            '  <a class="btn-primary lg:w-min" id="sceImport" style="float: inherit;" href="#sceImport" >IMPORT</a>' +
+            '  <a class="btn-primary lg:w-min" id="sceClear" style="float: inherit;" href="#sceClear" >CLEAR ALL</a>' +
+            '</div>' +
+            '</div>'+
             '</div>';
     }
 
@@ -119,7 +135,7 @@ function ToolBar(dataManager) {
     };
 }
 function MarkCardList(toolBar, dataManager) {
-    Renderer.call(this);
+    Renderable.call(this);
     this.dataManager = dataManager;
     this.toolBar = toolBar;
 
@@ -140,7 +156,7 @@ function MarkCardList(toolBar, dataManager) {
     };
 
     this.renderGameCardsInterface = () => {
-        document.querySelectorAll('.inventory-game-card-item').forEach((element, index) => {
+        document.querySelectorAll('.grid > div.flex-col:not(.hidden)').forEach((element, index) => {
             let borderStyle = this.UNMARK_BORDER_STYLE;
             let backgroundColor = this.UNMARK_BACKGROUND_COLOR;
             let buttonText = this.UNMARK_BUTTON_TEXT;
@@ -167,7 +183,7 @@ function MarkCardList(toolBar, dataManager) {
     };
 
     this.gameCardInterfaceTemplate = (index, buttonText, backgroundColor) => {
-        let styleTag = ' style="position: absolute;background-color: ' + backgroundColor + ';padding: 2px 12px 2px 12px;z-index: 1;top: 10px;right: 0px;cursor: pointer;"';
+        let styleTag = ' style="position: relative;background-color: ' + backgroundColor + ';padding: 2px 12px 2px 12px;z-index: 1;right: 0px;cursor: pointer;"';
         return '<div class="btn-action" sce-enhanced-index=' + index + styleTag + '>' + buttonText + '</div>';
     };
 
@@ -217,7 +233,7 @@ function MarkCardList(toolBar, dataManager) {
     };
 
     this.injectToolBar = () => {
-        document.querySelector('#content-advert').outerHTML = toolBar.template() + document.querySelector('#content-advert').outerHTML;
+        document.querySelector('main div:nth-child(3)').outerHTML = toolBar.template() + document.querySelector('main div:nth-child(3)').outerHTML;
         this.toolBar.addListeners();
     };
 
@@ -242,10 +258,10 @@ function MarkCardList(toolBar, dataManager) {
     };
 }
 
-MarkCardList.prototype = Object.create(Renderer.prototype);
+MarkCardList.prototype = Object.create(Renderable.prototype);
 
 function ListMarkedGames(toolBar, dataManager) {
-    Renderer.call(this);
+    Renderable.call(this);
     this.dataManager = dataManager;
     this.toolBar = toolBar;
 
@@ -254,7 +270,7 @@ function ListMarkedGames(toolBar, dataManager) {
     this.render = () => {
 
         let inventory = this.dataManager.loadInventory();
-        let contentBox = document.querySelector("#inventory-content > div.content-box-normal");
+        let contentBox = document.querySelector("#inventorylist_wrapper");
         let responseTable = this.markedGamesTemplate(inventory);
 
         contentBox.outerHTML = contentBox.outerHTML + this.toolBar.template() + responseTable;
@@ -287,7 +303,7 @@ function ListMarkedGames(toolBar, dataManager) {
     this.markedGamesTemplate = (inventory) => {
 
         let template = '<div class="content-box">' +
-            '<div class="content-box-topbar"><span class="left">MARKED GAMES</span></div>' +
+            '<div class="flex items-center p-2 mx-auto mt-0.5 leading-none bg-black" style="justify-content: center;font-weight: bold;"><span class="left">MARKED GAMES</span></div>' +
             '<div class="dataTables_wrapper no-footer">' +
             '<table id="markedGamesList" class="price-list-table nth dataTable no-footer" ><thead><tr>';
 
@@ -315,4 +331,4 @@ function ListMarkedGames(toolBar, dataManager) {
 
 }
 
-ListMarkedGames.prototype = Object.create(Renderer.prototype);
+ListMarkedGames.prototype = Object.create(Renderable.prototype);
