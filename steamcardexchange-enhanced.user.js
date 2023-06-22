@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Steam Card Exchange Enhanced
 // @namespace    https://sergiosusa.com/
-// @version      0.6
+// @version      0.7
 // @description  This script enhanced the famous steam trading cards site Steam Card Exchange.
 // @author       Sergio Susa (https://sergiosusa.com)
 // @match        https://www.steamcardexchange.net/index.php?inventorygame-appid-*
@@ -243,7 +243,7 @@ function MarkCardList(toolBar, dataManager) {
     }
 
     this.appName = () => {
-        return document.querySelector('.game-title').innerText.trim();
+        return document.querySelector("body > main > div:nth-child(4) > div.flex.flex-col.justify-center.p-5.gap-y-1 > div:nth-child(1)").innerText.trim();
     }
 
     this.isSomethingMarked = (cards) => {
