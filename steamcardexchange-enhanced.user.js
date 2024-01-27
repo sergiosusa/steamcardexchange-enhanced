@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Steam Card Exchange Enhanced
 // @namespace    https://sergiosusa.com/
-// @version      0.7
+// @version      0.8
 // @description  This script enhanced the famous steam trading cards site Steam Card Exchange.
 // @author       Sergio Susa (https://sergiosusa.com)
 // @match        https://www.steamcardexchange.net/index.php?inventorygame-appid-*
@@ -282,22 +282,27 @@ function ListMarkedGames(toolBar, dataManager) {
 
     this.addListenersToMarkedGames = () => {
 
-        if (document.querySelector('#sceClearGame') === null){
+        let removeButtonList = document.querySelectorAll('#sceClearGame');
+
+        if (removeButtonList.length === 0){
             return;
         }
+        let self = this;
+        removeButtonList.forEach(function (button) {
 
-        document.querySelector('#sceClearGame').addEventListener('click', ((self, event) => {
+           button.addEventListener('click', function (event) {
 
-            if (confirm('Are you sure you want to clear this games?')) {
+               if (confirm('Are you sure you want to clear this games?')) {
+                   let inventoryData = this.dataManager.loadInventory();
+                   let appId = event.target.getAttribute('sce-enhanced-index');
+                   delete inventoryData[appId];
+                   this.dataManager.saveInventory(inventoryData);
+                   location.reload();
+               }
+               return false;
+           }.bind(self));
+        });
 
-                let inventoryData = self.dataManager.loadInventory();
-                let appId = event.target.getAttribute('sce-enhanced-index');
-                delete inventoryData[appId];
-                self.dataManager.saveInventory(inventoryData);
-                location.reload();
-            }
-            return false;
-        }).bind(null, this));
     };
 
     this.markedGamesTemplate = (inventory) => {
