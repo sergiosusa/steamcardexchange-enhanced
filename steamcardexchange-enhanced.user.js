@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Steam Card Exchange Enhanced
 // @namespace    https://sergiosusa.com/
-// @version      0.8
+// @version      0.10
 // @description  This script enhanced the famous steam trading cards site Steam Card Exchange.
 // @author       Sergio Susa (https://sergiosusa.com)
 // @match        https://www.steamcardexchange.net/index.php?inventorygame-appid-*
@@ -150,87 +150,126 @@ function MarkCardList(toolBar, dataManager) {
     this.MARK_BACKGROUND_COLOR = 'green';
 
     this.render = () => {
-        this.renderGameCardsInterface();
-        this.addListenersToGameCardInterface();
+        this.injectButtonsToCards();
+        this.loadSavedInventory();
         this.injectToolBar();
     };
 
-    this.renderGameCardsInterface = () => {
-        document.querySelectorAll('.grid > div.flex-col:not(.hidden)').forEach((element, index) => {
-            let borderStyle = this.UNMARK_BORDER_STYLE;
-            let backgroundColor = this.UNMARK_BACKGROUND_COLOR;
-            let buttonText = this.UNMARK_BUTTON_TEXT;
-            let appId = this.appId();
+    this.injectButtonsToCards = () => {
+        let cardList = document.querySelectorAll('.grid > div.flex-col:not(.hidden)');
 
-            if (this.dataManager.isCardMarked(appId, index)) {
-                borderStyle = this.MARK_BORDER_STYLE;
-                buttonText = this.MARK_BUTTON_TEXT;
-                backgroundColor = this.MARK_BACKGROUND_COLOR;
-            }
-            this.injectGameCardInterface(element, index, backgroundColor, buttonText, borderStyle);
-        }, this);
-    };
+        cardList.forEach((element, index) => {
 
-    this.injectGameCardInterface = (element, index, backgroundColor, buttonText, borderStyle) => {
+            element.classList.add('sce-enhanced-card');
+            element.classList.add('sce-enhanced-card-'+ index);
 
-        if (element.innerText.trim() !== '') {
-            let htmlTemplate = this.gameCardInterfaceTemplate(index, buttonText, backgroundColor);
-            element.innerHTML = htmlTemplate + element.innerHTML;
-            element.style.border = borderStyle;
-        } else {
-            element.remove();
-        }
-    };
+            let template = '<div class="sce-enhanced-buttons" sce-enhanced-status="" style="display: flex;justify-content: space-around;width: 100%;">' +
+                '<div class="btn-primary btn-have-action" sce-enhanced-index=' + index + ' style="border:1px solid grey;font-size:1.3rem;position:relative;margin-left:10px;margin-right:10px;z-index:1;cursor:pointer;">' +
+                    '✉️' +
+                '</div>' +
+                '<div class="btn-primary btn-need-action" sce-enhanced-index=' + index + ' style="border:1px solid green;font-size:1.3rem;position:relative;margin-left:10px;margin-right:10px;z-index:1;cursor:pointer;">' +
+                    '💌' +
+                '</div>' +
+            '</div>';
 
-    this.gameCardInterfaceTemplate = (index, buttonText, backgroundColor) => {
-        let styleTag = ' style="position: relative;background-color: ' + backgroundColor + ';padding: 2px 12px 2px 12px;z-index: 1;right: 0px;cursor: pointer;"';
-        return '<div class="btn-action" sce-enhanced-index=' + index + styleTag + '>' + buttonText + '</div>';
-    };
+            element.innerHTML = template + element.innerHTML;
+        });
 
-    this.addListenersToGameCardInterface = function () {
+        this.addClickEventsToButtonsInCards();
+
+    }
+
+    this.addClickEventsToButtonsInCards = () => {
 
         let self = this;
 
-        document.querySelectorAll('.btn-action').forEach((element) => {
+        let buttons = document.querySelectorAll(".btn-need-action,.btn-have-action");
 
-            element.addEventListener('click', ((self, event) => {
+        buttons.forEach((button) => {
+            button.addEventListener('click', ((self, event) => {
 
-                let borderStyle = self.UNMARK_BORDER_STYLE;
-                let backgroundColor = self.UNMARK_BACKGROUND_COLOR;
-                let buttonText = self.UNMARK_BUTTON_TEXT;
-                let selected = 0;
-
-                if (event.target.innerText === 'Needed') {
-                    borderStyle = self.MARK_BORDER_STYLE;
-                    backgroundColor = self.MARK_BACKGROUND_COLOR;
-                    buttonText = self.MARK_BUTTON_TEXT;
-                    selected = 1;
-                }
-
-                event.target.parentElement.style.border = borderStyle;
-                event.target.innerText = buttonText;
-                event.target.style.backgroundColor = backgroundColor;
-
-                let inventoryData = self.dataManager.loadInventory();
+                let inventory = self.dataManager.loadInventory();
                 let appId = self.appId();
                 let appName = self.appName();
 
-                if (inventoryData[appId] === undefined) {
-                    inventoryData[appId] = {};
+                if (inventory[appId] === undefined) {
+                    inventory[appId] = {
+                        'name': undefined
+                    };
                 }
 
-                inventoryData[appId]['name'] = appName;
-                inventoryData[appId][event.target.getAttribute('sce-enhanced-index')] = selected;
+                let action = 'have';
 
-                if (!self.isSomethingMarked(inventoryData[appId])) {
-                    delete inventoryData[appId]
+                if (event.target.classList.contains('btn-need-action')){
+                    action = 'need';
                 }
 
-                self.dataManager.saveInventory(inventoryData);
+                let status = event.target.closest(".sce-enhanced-buttons").getAttribute('sce-enhanced-status');
+
+                if(status === "" || status !== action){
+                    status = action;
+                } else {
+                    status="";
+                }
+
+                event.target.closest(".sce-enhanced-buttons").setAttribute('sce-enhanced-status', status);
+                inventory[appId]['name'] = appName;
+                inventory[appId][event.target.getAttribute('sce-enhanced-index')] = status;
+
+                if (!self.isSomethingMarked(inventory[appId])) {
+                    delete inventory[appId]
+                }
+
+                self.dataManager.saveInventory(inventory);
+
+                let color = 'transparent';
+
+                if(status === 'need'){
+                    color = 'green'
+                }
+
+                if(status === 'have'){
+                    color = 'grey';
+                }
+
+                event.target.closest('.sce-enhanced-card').style.border = '2px solid ' + color;
 
             }).bind(null, self));
         });
-    };
+
+    }
+
+    this.loadSavedInventory = () => {
+        let inventory = this.dataManager.loadInventory();
+        let appId = this.appId();
+
+        if (inventory[appId] !== undefined) {
+
+            let cards = inventory[appId];
+
+            for (let key in cards) {
+                if (key !== 'name') {
+                    if (cards[key] !== "") {
+                        let card = document.querySelector(".sce-enhanced-card-" + key);
+
+                        let color = 'transparent';
+
+                        if(cards[key] === 'need'){
+                            color = 'green'
+                        }
+
+                        if(cards[key] === 'have'){
+                            color = 'grey';
+                        }
+
+                        card.style.border = '2px solid ' + color;
+                        card.querySelector(".sce-enhanced-buttons").setAttribute('sce-enhanced-status', cards[key]);
+                    }
+                }
+            }
+        }
+
+    }
 
     this.injectToolBar = () => {
         document.querySelector('main div:nth-child(3)').outerHTML = toolBar.template() + document.querySelector('main div:nth-child(3)').outerHTML;
@@ -249,7 +288,7 @@ function MarkCardList(toolBar, dataManager) {
     this.isSomethingMarked = (cards) => {
         for (let key in cards) {
             if (key !== 'name') {
-                if (cards[key] !== 0) {
+                if (cards[key] !== "") {
                     return true;
                 }
             }
