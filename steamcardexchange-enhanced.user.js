@@ -26,7 +26,7 @@ function SteamCardExchangeEnhanced() {
     this.toolBar = new ToolBar(this.dataManager);
 
     this.rendererList = [
-        new MarkCardList(this.toolBar, this.dataManager),
+        new ExchangeConfigurationHelper(this.toolBar, this.dataManager),
         new ListMarkedGames(this.toolBar, this.dataManager)
     ];
 }
@@ -134,28 +134,20 @@ function ToolBar(dataManager) {
         }).bind(null, this));
     };
 }
-function MarkCardList(toolBar, dataManager) {
+function ExchangeConfigurationHelper(toolBar, dataManager) {
     Renderable.call(this);
     this.dataManager = dataManager;
     this.toolBar = toolBar;
 
     this.handlePage = /https:\/\/www.steamcardexchange\.net\/index.php\?inventorygame-appid-(.*)/g;
-
-    this.UNMARK_BORDER_STYLE = '2px solid transparent';
-    this.UNMARK_BUTTON_TEXT = 'Needed';
-    this.UNMARK_BACKGROUND_COLOR = 'red';
-
-    this.MARK_BORDER_STYLE = '2px solid green';
-    this.MARK_BUTTON_TEXT = 'Unneeded';
-    this.MARK_BACKGROUND_COLOR = 'green';
-
+    
     this.render = () => {
-        this.injectButtonsToCards();
+        this.renderButtonsToCard();
         this.loadSavedInventory();
-        this.injectToolBar();
+        this.renderToolBar();
     };
 
-    this.injectButtonsToCards = () => {
+    this.renderButtonsToCard = () => {
         let cardList = document.querySelectorAll('.grid > div.flex-col:not(.hidden)');
 
         cardList.forEach((element, index) => {
@@ -164,10 +156,10 @@ function MarkCardList(toolBar, dataManager) {
             element.classList.add('sce-enhanced-card-'+ index);
 
             let template = '<div class="sce-enhanced-buttons" sce-enhanced-status="" style="display: flex;justify-content: space-around;width: 100%;">' +
-                '<div class="btn-primary btn-have-action" sce-enhanced-index=' + index + ' style="border:1px solid grey;font-size:1.3rem;position:relative;margin-left:10px;margin-right:10px;z-index:1;cursor:pointer;">' +
+                '<div title="I have extra cards" class="btn-primary btn-have-action" sce-enhanced-index=' + index + ' style="border:1px solid grey;font-size:1.3rem;position:relative;margin-left:10px;margin-right:10px;z-index:1;cursor:pointer;">' +
                     '✉️' +
                 '</div>' +
-                '<div class="btn-primary btn-need-action" sce-enhanced-index=' + index + ' style="border:1px solid green;font-size:1.3rem;position:relative;margin-left:10px;margin-right:10px;z-index:1;cursor:pointer;">' +
+                '<div title="I need it" class="btn-primary btn-need-action" sce-enhanced-index=' + index + ' style="border:1px solid green;font-size:1.3rem;position:relative;margin-left:10px;margin-right:10px;z-index:1;cursor:pointer;">' +
                     '💌' +
                 '</div>' +
             '</div>';
@@ -271,7 +263,7 @@ function MarkCardList(toolBar, dataManager) {
 
     }
 
-    this.injectToolBar = () => {
+    this.renderToolBar = () => {
         document.querySelector('main div:nth-child(3)').outerHTML = toolBar.template() + document.querySelector('main div:nth-child(3)').outerHTML;
         this.toolBar.addListeners();
     };
@@ -297,7 +289,7 @@ function MarkCardList(toolBar, dataManager) {
     };
 }
 
-MarkCardList.prototype = Object.create(Renderable.prototype);
+ExchangeConfigurationHelper.prototype = Object.create(Renderable.prototype);
 
 function ListMarkedGames(toolBar, dataManager) {
     Renderable.call(this);
@@ -347,7 +339,7 @@ function ListMarkedGames(toolBar, dataManager) {
     this.markedGamesTemplate = (inventory) => {
 
         let template = '<div class="content-box">' +
-            '<div class="flex items-center p-2 mx-auto mt-0.5 leading-none bg-black" style="justify-content: center;font-weight: bold;"><span class="left">MARKED GAMES</span></div>' +
+            '<div class="flex items-center p-2 mx-auto mt-0.5 leading-none bg-black" style="justify-content: center;font-weight: bold;"><span class="left">🎮 GAMES PENDING TO TRADE 🎮</span></div>' +
             '<div class="dataTables_wrapper no-footer">' +
             '<table id="markedGamesList" class="price-list-table nth dataTable no-footer" ><thead><tr>';
 
@@ -363,7 +355,7 @@ function ListMarkedGames(toolBar, dataManager) {
         for (let key in inventory) {
 
             template += '<tr class="' + (times % 2 === 0 ? 'even' : 'odd') + '">' +
-                '<td class="name"><a href="index.php?inventorygame-appid-' + key + '">' + inventory[key].name + '</a></td><td><a id="sceClearGame" sce-enhanced-index="' + key + '" style="float: inherit;" href="#sceExport" class="button-blue">REMOVE</a></td>' +
+                '<td class="name"><a href="index.php?inventorygame-appid-' + key + '">' + inventory[key].name + '</a></td><td><a id="sceClearGame" sce-enhanced-index="' + key + '" style="float: inherit;" href="#sceExport" class="button-blue">❌</a></td>' +
                 '</tr>';
             times++;
         }
