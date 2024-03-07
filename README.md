@@ -3,7 +3,7 @@
 This script enhanced the famous steam trading cards site **Steam Card Exchange** adding: 
 
 * Game card inventory page: 
-  * Mark/Unmark cards that you need to easily found it.
+  * Mark/Unmark cards that you need/have to easily found it.
   * Export, import and clear buttons to handle users script configuration.  
 * Inventory main page:
   * List of games with cards marked.
@@ -35,10 +35,11 @@ No extra configuration required.
 
 ## 📷Screenshots📷
 
-![List of games marked](https://i.ibb.co/wYDhR1X/steam-card-exchange-enhanced-script.webp)
+![Exchange Configured List](screenshots/steam-card-exchange-enhanced.png)
 
-![Mark/Unmark card that you need to easily found it.](https://i.ibb.co/FB1SqRs/steam-card-exchange-enhanced-script-2.webp)
+![Mark/Unmark card that you need/have to easily found it.](screenshots/steam-card-exchange-enhanced-2.png)
 
-### ☕Buy me a coffee☕
+### ☕ Buy me a coffee ☕
 
-If you want to support my scripts, consider to use my amazon [affiliate link](https://amazon.es/?tag=sergiosusa-21) or add this query string ``?tag=sergiosusa-21`` before add a product to the basket when you buy on Amazon spain.
+If you want to support my scripts, consider to send me a tip: 
+- [Paypal](https://paypal.me/sergiosusa?country.x=ES&locale.x=es_ES)
